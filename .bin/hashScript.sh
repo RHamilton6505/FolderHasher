@@ -12,10 +12,8 @@ do
 done < .bin/files.txt
 
 echo checking hash...
-CORRECT_HASH=$(cat .bin/hashFile.txt)
-set $FINAL_HASH $CORRECT_HASH
-echo $FINAL_HASH
-echo $CORRECT_HASH
+FINAL_HASH=$(echo $FINAL_HASH | cut -d '-' -f 1)
+CORRECT_HASH=$(cat .bin/hashFile.txt | cut -d '-' -f 1)
 
 if [ "$FINAL_HASH" == "$CORRECT_HASH" ]
 then
