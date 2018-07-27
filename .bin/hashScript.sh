@@ -1,7 +1,13 @@
 cd ..
+PARENT_PATH=$(pwd)
+BIN_PATH=$(echo $PARENT_PATH/.bin)
+HASHF_PATH=$(echo $PARENT_PATH/.hashes)
+echo "What is the folder you'd like to hash?"
+read HASH_PATH
+cd $HASH_PATH
 echo "Getting list of files and making hashes..."
-ls | tee .bin/files.txt                        #put all the names of files in one file
-declare -i NUM_FILES=$(wc -l<.bin/files.txt)   #get the number of files
+ls | sed 's/ /\\ /g' | tee $BIN_PATH/files.txt                        #put all the names of files in one file
+declare -i NUM_FILES=$(wc -l < $BIN_PATH/files.txt)   #get the number of files
 declare -i CURRENT_FILE=1                      #current file num being iterated thru..
 declare -i FILES_HASHED=$NUM_FILES
 while read line
@@ -9,9 +15,9 @@ do
   touch $CURRENT_FILE.txt
   LINE_HASH=$(cat $line | sha512sum)
   echo $LINE_HASH | tee $CURRENT_FILE.txt
-  mv $CURRENT_FILE.txt .hashes
+  mv $CURRENT_FILE.txt $HASHF_PATH
   CURRENT_FILE=$CURRENT_FILE+1
-done < .bin/files.txt
+done < $BIN_PATH/files.txt
 
 
 declare -i CURRENT_LEVEL=0
@@ -32,11 +38,11 @@ then
     NEW_HASH_POS2=$((CURRENT_HASH * 2 - 1))
     # echo $NEW_HASH_POS1
     # echo $NEW_HASH_POS2
-    HASH_CONCAT="$(cat .hashes/$NEW_HASH_POS1.txt) $(cat .hashes/$NEW_HASH_POS2.txt)"
-    rm .hashes/$NEW_HASH_POS1.txt
-    rm .hashes/$NEW_HASH_POS2.txt
+    HASH_CONCAT="$(cat $HASHF_PATH/$NEW_HASH_POS1.txt) $(cat $HASHF_PATH/$NEW_HASH_POS2.txt)"
+    rm $HASHF_PATH/$NEW_HASH_POS1.txt
+    rm $HASHF_PATH/$NEW_HASH_POS2.txt
 
-    echo $HASH_CONCAT | sha512sum | tee .hashes/$CURRENT_HASH.txt
+    echo $HASH_CONCAT | sha512sum | tee $HASHF_PATH/$CURRENT_HASH.txt
 
     CURRENT_HASH=$((CURRENT_HASH + 1))
   done
@@ -48,7 +54,7 @@ then
   while [ $CURRENT_HASH -lt $((NUM_FILES + 1)) ]
   do
     NEW_POS=$((CURRENT_HASH - OVERFLOW))
-    mv .hashes/$CURRENT_HASH.txt .hashes/$NEW_POS.txt
+    mv $HASHF_PATH/$CURRENT_HASH.txt $HASHF_PATH/$NEW_POS.txt
     echo
     CURRENT_HASH=$((CURRENT_HASH + 1))
   done
@@ -72,11 +78,11 @@ do
     NEW_HASH_POS1=$((CURRENT_HASH * 2))
     NEW_HASH_POS2=$((CURRENT_HASH * 2 - 1))
 
-    HASH_CONCAT="$(cat .hashes/$NEW_HASH_POS1.txt) $(cat .hashes/$NEW_HASH_POS2.txt)"
-    rm .hashes/$NEW_HASH_POS1.txt
-    rm .hashes/$NEW_HASH_POS2.txt
+    HASH_CONCAT="$(cat $HASHF_PATH/$NEW_HASH_POS1.txt) $(cat $HASHF_PATH/$NEW_HASH_POS2.txt)"
+    rm $HASHF_PATH/$NEW_HASH_POS1.txt
+    rm $HASHF_PATH/$NEW_HASH_POS2.txt
 
-    echo $HASH_CONCAT | sha512sum | tee .hashes/$CURRENT_HASH.txt
+    echo $HASH_CONCAT | sha512sum | tee $HASHF_PATH/$CURRENT_HASH.txt
 
 
 
@@ -93,8 +99,8 @@ echo checking hash...
 
 clear
 
-FINAL_HASH=$(cat .hashes/1.txt | cut -d '-' -f 1)
-CORRECT_HASH=$(cat .bin/hashFile.txt | cut -d '-' -f 1)
+FINAL_HASH=$(cat $HASHF_PATH/1.txt | cut -d '-' -f 1)
+CORRECT_HASH=$(cat $BIN_PATH/hashFile.txt | cut -d '-' -f 1)
 
 echo Hashed $FILES_HASHED files!
 echo
@@ -111,4 +117,11 @@ fi
 if [ "$FINAL_HASH" != "$CORRECT_HASH" ]
 then
   echo "Hashes don't match!"
+  echo "Would you like to save this new hash as the new hash (y/n)?"
+  read ANSWER
+  if [ $ANSWER == y ]
+  then
+    echo "$FINAL_HASH-" > $BIN_PATH/hashFile.txt
+    echo "Hash changed!"
+  fi
 fi
