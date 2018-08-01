@@ -2,15 +2,18 @@ cd ..
 PARENT_PATH=$(pwd)
 BIN_PATH=$(echo $PARENT_PATH/.bin)
 HASHF_PATH=$(echo $PARENT_PATH/.hashes)
+
 echo "What is the folder you'd like to hash?"
-read HASH_PATH
-cd $HASH_PATH
+read HASH_PATH                                          #gets the path to the folder that will be hashed
+cd $HASH_PATH                                           #changes user to the correct directory
 echo "Getting list of files and making hashes..."
-ls | sed 's/ /\\ /g' | tee $BIN_PATH/files.txt                        #put all the names of files in one file
-declare -i NUM_FILES=$(wc -l < $BIN_PATH/files.txt)   #get the number of files
-declare -i CURRENT_FILE=1                      #current file num being iterated thru..
+
+ls | sed 's/ /\\ /g' | tee $BIN_PATH/files.txt          #put all the names of files in one file
+declare -i NUM_FILES=$(wc -l < $BIN_PATH/files.txt)     #get the number of files
+declare -i CURRENT_FILE=1                               #current file num being iterated thru..
 declare -i FILES_HASHED=$NUM_FILES
-while read line
+
+while read line                                         #loop, while there are still files, it hashes
 do
   touch $CURRENT_FILE.txt
   LINE_HASH=$(cat $line | sha512sum)
@@ -19,6 +22,7 @@ do
   CURRENT_FILE=$CURRENT_FILE+1
 done < $BIN_PATH/files.txt
 
+#these four lines are what setup the tree in our program
 
 declare -i CURRENT_LEVEL=0
 declare -i TOP_LEVEL=$(echo "l($NUM_FILES)/l(2)" | bc -l | cut -f1 -d".")
@@ -31,7 +35,10 @@ if [ "$OVERFLOW" -gt 0 ]
 then
 
   CURRENT_HASH=1
-
+  
+  #while there are more than one files in our folder, it will continue to combine the files and rehash them
+  #this is set up for if there is an odd number
+  
   while [ $CURRENT_HASH -lt $((OVERFLOW + 1)) ]
   do
     NEW_HASH_POS1=$((CURRENT_HASH * 2))
@@ -63,9 +70,7 @@ then
 
 fi
 
-
-
-
+#does the same thing as loop above, but for even numbers
 
 while [ $CURRENT_LEVEL -lt $TOP_LEVEL ]
 do
@@ -94,6 +99,7 @@ do
 
 done
 
+#tests to make sure the hash is correct
 
 echo checking hash...
 
